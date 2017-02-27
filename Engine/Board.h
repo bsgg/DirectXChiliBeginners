@@ -2,6 +2,7 @@
 
 #include "Graphics.h"
 #include "Location.h"
+#include <random>
 
 class Board
 {
@@ -12,6 +13,10 @@ public:
 	int GetGridWidth() const;
 	int GetGridHeight() const;
 	bool IsInsideBoard(const Location& loc) const;
+	bool CheckForObstacle(const Location& loc) const;
+	// Use of forward declaration to avoid any circular dependencies with snake and board
+	// Snake.h already include Board, so that´s why we can´t include Snake in this header file
+	void SpawnObstacle(std::mt19937& rng, const class Snake& snake);
 	void DrawBorder();
 	
 
@@ -28,5 +33,8 @@ private:
 
 	static constexpr int x = 70;
 	static constexpr int y = 20;
+
+	// Initialize all the elements with {}
+	bool hasObstacle[width * height] = { false };
 	Graphics& gfx;
 };

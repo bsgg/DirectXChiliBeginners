@@ -1,4 +1,5 @@
 #include "Board.h"
+#include "Snake.h"
 #include <assert.h>
 
 Board::Board(Graphics & gfx)
@@ -35,6 +36,30 @@ bool Board::IsInsideBoard(const Location & loc) const
 			(loc.x < width) && 
 			( loc.y >= 0) && 
 			(loc.y < height);
+}
+
+bool Board::CheckForObstacle(const Location & loc) const
+{
+	return hasObstacle[width * loc.y + loc.x];
+}
+
+void Board::SpawnObstacle(std::mt19937 & rng, const Snake & snake)
+{
+	// Random location
+	std::uniform_int_distribution<int> xDist(0, GetGridWidth() - 1);
+	std::uniform_int_distribution<int> yDist(0, GetGridHeight() - 1);
+
+	Location newLoc;
+	do
+	{
+		newLoc.x = xDist(rng);
+		newLoc.y = yDist(rng);
+
+		// Check another location if snake is this location or the board has already another obstacle
+	} while (snake.IsInTile(newLoc) || CheckForObstacle(newLoc));
+	
+	// Include new obstacle
+	hasObstacle[newLoc.y * width + newLoc.x] = true;
 }
 
 void Board::DrawBorder()
