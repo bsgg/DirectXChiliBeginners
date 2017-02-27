@@ -16,12 +16,13 @@ public:
 	bool CheckForObstacle(const Location& loc) const;
 	// Use of forward declaration to avoid any circular dependencies with snake and board
 	// Snake.h already include Board, so that´s why we can´t include Snake in this header file
-	void SpawnObstacle(std::mt19937& rng, const class Snake& snake);
+	void SpawnObstacle(std::mt19937& rng, const class Snake& snake, const class GoalSnake& goal);
 	void DrawBorder();
-	
+	void DrawObstacles();
 
 private:
 	static constexpr Color borderColor = Colors::Blue;
+	static constexpr Color obstacleColor = Colors::Gray;
 
 	static constexpr int dimension = 20;
 	static constexpr int cellPadding = 1;

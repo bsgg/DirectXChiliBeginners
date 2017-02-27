@@ -81,7 +81,8 @@ void Game2::UpdateFrame()
 				const Location next = snake.GetNexHeadLocation(delta_loc);
 
 				if (!board.IsInsideBoard(next) ||
-					snake.IsInTileExceptEnd(next))
+					snake.IsInTileExceptEnd(next) || 
+					board.CheckForObstacle(next))
 				{
 					gameIsOver = true;
 				}
@@ -90,13 +91,13 @@ void Game2::UpdateFrame()
 					const bool eating = next == goal.GetLocation();
 					if (eating)
 					{
-
 						snake.Grow();
 					}
 					snake.MoveBy(delta_loc);
 					if (eating)
 					{
 						goal.Respawn(rng, board, snake);
+						board.SpawnObstacle(rng, snake, goal);
 					}
 				}
 			}
@@ -147,6 +148,7 @@ void Game2::DrawFrame()
 		}
 
 		board.DrawBorder();
+		board.DrawObstacles();
 	}
 	else
 	{
