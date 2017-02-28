@@ -6,6 +6,7 @@
 #include "Board.h"
 #include "Snake.h"
 #include "GoalSnake.h"
+#include "FrameTimer.h"
 #include <random>
 
 class Game2
@@ -17,10 +18,11 @@ public:
 	void Go();
 private:
 	void DrawFrame();
-	void UpdateFrame();
+	void UpdateFrame(float dt);
 private:
 	MainWindow& wnd;
 	Graphics gfx;
+	FrameTimer ft;
 
 	std::mt19937 rng;
 	Board board;
@@ -30,10 +32,11 @@ private:
 	Location delta_loc = { 1,0 };
 	
 	// How many frames the snake takes to move (60 / 20 = 3 frames per second)
-	static constexpr int snakeMovePeriodMin = 4;
-	int snakeMoveRate = 20;
-	int snakeMoveCounter = 0;
-	static constexpr int snakeSpeedupPeriod = 180;
+	static constexpr float snakeMovePeriodMin = 0.06f;
+	static constexpr float snakeMovePeriodSpeedup = 0.15f;
+	float snakeMovePeriod = 0.4f;
+	float snakeMoveCounter = 0.0f;
+	static constexpr float snakeSpeedupPeriod = 0.05f;
 	int snakeSpeedupPeriodCounter = 0;
 	bool gameIsOver = false;
 	bool gameIsStarted = false;

@@ -43,14 +43,22 @@ void Game2::Go()
 {
 	// Starts a frame
 	gfx.BeginFrame();
-	UpdateFrame();
+
+	float elapsedTime = ft.Mark();
+	while (elapsedTime > 0.0f)
+	{
+		const float dt = std::min(0.0025f, elapsedTime);
+		UpdateFrame(dt);
+		elapsedTime -= dt;
+	}
+
 	DrawFrame();
 	// End frame and here is when the graphics draw
 	gfx.EndFrame();
 }
 
 // Game Logic
-void Game2::UpdateFrame()
+void Game2::UpdateFrame(float dt)
 {
 	if (gameIsStarted)
 	{
@@ -73,11 +81,17 @@ void Game2::UpdateFrame()
 				delta_loc = { 1,0 };
 			}
 
-			// Move the snake according to the rate
-			++snakeMoveCounter;
-			if (snakeMoveCounter >= snakeMoveRate)
+			float snakeModifiedMovePeriod = snakeMovePeriod;
+			if (wnd.kbd.KeyIsPressed(VK_CONTROL))
 			{
-				snakeMoveCounter = 0;
+				snakeModifiedMovePeriod = std::min(snakeMovePeriod, snakeMovePeriodSpeedup);
+			}
+
+			// Move the snake according to the rate
+			snakeMoveCounter += dt;
+			if (snakeMoveCounter >= snakeModifiedMovePeriod)
+			{
+				snakeMoveCounter -= snakeModifiedMovePeriod;
 				const Location next = snake.GetNexHeadLocation(delta_loc);
 
 				if (!board.IsInsideBoard(next) ||
@@ -102,13 +116,14 @@ void Game2::UpdateFrame()
 				}
 			}
 
-			++snakeSpeedupPeriodCounter;
+			snakeMovePeriod = std::max(snakeMovePeriod - dt * snakeMovePeriodSpeedup, snakeMovePeriodMin);
+			/*++snakeSpeedupPeriodCounter;
 			if (snakeSpeedupPeriodCounter >= snakeSpeedupPeriod)
 			{
 				snakeSpeedupPeriodCounter = 0;
 				--snakeMoveRate;
 				snakeMoveRate = std::max(snakeMoveRate - 1, snakeMovePeriodMin);				
-			}
+			}*/
 		}
 	}
 	else
