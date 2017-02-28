@@ -103,6 +103,7 @@ public:
 public:
 	SoundSystem( const SoundSystem& ) = delete;
 	static SoundSystem& Get();
+	static void SetMasterVolume( float vol = 1.0f );
 	static const WAVEFORMATEX& GetFormat();
 	void PlaySoundBuffer( class Sound& s,float freqMod,float vol );
 private:
@@ -130,8 +131,21 @@ class Sound
 {
 	friend SoundSystem::Channel;
 public:
-	Sound();
-	Sound( const std::wstring& fileName,bool loopingWithAutoDetect = false );
+	enum class LoopType
+	{
+		NotLooping,
+		AutoEmbeddedCuePoints,
+		AutoFullSound,
+		ManualFloat,
+		ManualSample,
+		Invalid
+	};
+public:
+	Sound() = default;
+	// for backwards compatibility--2nd parameter false -> NotLooping
+	Sound( const std::wstring& fileName,bool loopingWithAutoCueDetect );
+	// do not pass this function Manual LoopTypes!
+	Sound( const std::wstring& fileName,LoopType loopType = LoopType::NotLooping );
 	Sound( const std::wstring& fileName,unsigned int loopStart,unsigned int loopEnd );
 	Sound( const std::wstring& fileName,float loopStart,float loopEnd );
 	Sound( Sound&& donor );
@@ -141,12 +155,12 @@ public:
 	void StopAll();
 	~Sound();
 private:	
-	Sound( const std::wstring & fileName,bool detectLooping,bool manualLooping,
+	Sound( const std::wstring& fileName,LoopType loopType,
 		unsigned int loopStartSample,unsigned int loopEndSample,
 		float loopStartSeconds,float loopEndSeconds );
 private:
 	UINT32 nBytes = 0u;
-	bool looping;
+	bool looping = false;
 	unsigned int loopStart;
 	unsigned int loopEnd;
 	std::unique_ptr<BYTE[]> pData;

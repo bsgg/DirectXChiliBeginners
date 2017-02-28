@@ -30,31 +30,33 @@ Game2::Game2(MainWindow& wnd)
 	rng(std::random_device()()),
 	snake({ 2,2 })
 {
-	// Spawn food
-	board.SpawnContents(rng, snake, 2);
+	// Spawn food and poison
+	for (int i = 0; i < nPoison; i++)
+	{
+		board.SpawnContents(rng, snake, 3);
+	}
+
+	for (int i = 0; i < nFood; i++)
+	{
+		board.SpawnContents(rng, snake, 2);
+	}
+	sndTitle.Play(1.0f, 1.0f);
 }
 
 void Game2::Go()
 {
 	// Starts a frame
 	gfx.BeginFrame();
-
-	float elapsedTime = ft.Mark();
-	while (elapsedTime > 0.0f)
-	{
-		const float dt = std::min(0.0025f, elapsedTime);
-		UpdateFrame(dt);
-		elapsedTime -= dt;
-	}
-
+	UpdateFrame();
 	DrawFrame();
 	// End frame and here is when the graphics draw
 	gfx.EndFrame();
 }
 
 // Game Logic
-void Game2::UpdateFrame(float dt)
+void Game2::UpdateFrame()
 {
+	const float dt = ft.Mark();
 	if (gameIsStarted)
 	{
 		if (!gameIsOver)
@@ -94,6 +96,8 @@ void Game2::UpdateFrame(float dt)
 					contents == 1) // Obstacle
 				{
 					gameIsOver = true;
+					sndFart.Play();
+					sndMusic.StopAll();
 				}
 				else if (contents == 2) // Food
 				{
@@ -105,14 +109,25 @@ void Game2::UpdateFrame(float dt)
 					// Spawn food and obstalce
 					board.SpawnContents(rng, snake, 1);
 					board.SpawnContents(rng, snake, 2);
+
+					sfxEat.Play(rng, 0.8f);
+				}
+				else if (contents == 3) // Food
+				{
+					snake.MoveBy(delta_loc);
+					board.ConsumeContents(next);
+					board.SpawnContents(rng, snake, 3);
+					snakeMovePeriod = std::max(snakeMovePeriod * snakeSpeedupFactor, snakeMovePeriodMin);					
+					sndFart.Play();
 				}
 				else
 				{
 					// Empty place, move snake
 					snake.MoveBy(delta_loc);
 				}
+				sfxSlither.Play(rng, 0.08f);
 			}
-			snakeMovePeriod = std::max(snakeMovePeriod - dt * snakeMovePeriodSpeedup, snakeMovePeriodMin);
+			//snakeMovePeriod = std::max(snakeMovePeriod - dt * snakeMovePeriodSpeedup, snakeMovePeriodMin);
 		}
 	}
 	else

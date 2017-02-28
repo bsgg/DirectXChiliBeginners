@@ -46,7 +46,7 @@ int Board::GetContents(const Location & loc) const
 void Board::ConsumeContents(const Location& loc)
 {
 	// The only content to consume is food not any other content
-	assert(GetContents(loc) == 2);
+	//assert(GetContents(loc) == 2);
 	contents[width * loc.y + loc.x] = 0;
 }
 
@@ -97,9 +97,14 @@ void Board::DrawCells()
 			if (contents == 1)
 			{
 				DrawCell({ x, y }, obstacleColor);
+
 			}else if (contents == 2)
 			{
 				DrawCell({ x, y }, foodColor);
+			}
+			else if (contents == 3)
+			{
+				DrawCell({ x, y }, poisonColor);
 			}
 		}
 	}

@@ -36,6 +36,15 @@ SoundSystem& SoundSystem::Get()
 	return instance;
 }
 
+ void SoundSystem::SetMasterVolume( float vol )
+ {
+	 HRESULT hr;
+	 if( FAILED( hr = Get().pMaster->SetVolume( vol ) ) )
+	 {
+		throw CHILI_SOUND_API_EXCEPTION( hr,L"Setting master volume" );
+	 }
+ }
+
 const WAVEFORMATEX& SoundSystem::GetFormat()
 {
 	return *Get().format;
@@ -307,43 +316,57 @@ void SoundSystem::Channel::RetargetSound( const Sound* pOld,Sound* pNew )
 	pSound = pNew;
 }
 
-Sound::Sound()
+Sound::Sound( const std::wstring& fileName,bool loopingWithAutoCueDetect )
 	:
-	looping( false ),
-	nBytes( 0u )
-{}
-
-Sound::Sound( const std::wstring & fileName,bool loopingWithAutoDetect )
-	:
-	Sound( fileName,loopingWithAutoDetect,false,nullSample,nullSample,nullSeconds,nullSeconds )
+	Sound( fileName,loopingWithAutoCueDetect ? 
+		LoopType::AutoEmbeddedCuePoints : LoopType::NotLooping )
 {
 }
 
-Sound::Sound( const std::wstring & fileName,unsigned int loopStart,unsigned int loopEnd )
+Sound::Sound( const std::wstring& fileName,LoopType loopType )
 	:
-	Sound( fileName,false,true,loopStart,loopEnd,nullSeconds,nullSeconds )
+	Sound( fileName,loopType,nullSample,nullSample,nullSeconds,nullSeconds )
 {
 }
 
-Sound::Sound( const std::wstring & fileName,float loopStart,float loopEnd )
+Sound::Sound( const std::wstring& fileName,unsigned int loopStart,unsigned int loopEnd )
 	:
-	Sound( fileName,false,true,nullSample,nullSample,loopStart,loopEnd )
+	Sound( fileName,LoopType::ManualSample,loopStart,loopEnd,nullSeconds,nullSeconds )
 {
-
 }
 
-Sound::Sound( const std::wstring & fileName,bool detectLooping,bool manualLooping,
+Sound::Sound( const std::wstring& fileName,float loopStart,float loopEnd )
+	:
+	Sound( fileName,LoopType::ManualFloat,nullSample,nullSample,loopStart,loopEnd )
+{
+}
+
+Sound::Sound( const std::wstring& fileName,LoopType loopType,
 	unsigned int loopStartSample,unsigned int loopEndSample,
 	float loopStartSeconds,float loopEndSeconds )
-	:
-	looping( detectLooping || manualLooping )
 {
-	// check if manual and detect settings are consistent
-	assert( !(detectLooping && manualLooping) );
-	// check if manual loop points are consistent with each other and with manual loop switch
-	assert( manualLooping == ((loopStartSample == nullSample && loopEndSample == nullSample) !=
-		(loopStartSeconds == nullSeconds && loopEndSeconds == nullSeconds)) );
-	
+	// if manual float looping, second inputs cannot be null
+	assert( (loopType == LoopType::ManualFloat) !=
+		(loopStartSeconds == nullSeconds || loopEndSeconds == nullSeconds) &&
+		"Did you pass a LoopType::Manual to the constructor? (BAD!)" );
+	// if manual sample looping, sample inputs cannot be null
+	assert( (loopType == LoopType::ManualSample) !=
+		(loopStartSample == nullSample || loopEndSample == nullSample) &&
+		"Did you pass a LoopType::Manual to the constructor? (BAD!)" );
+
+	const auto IsFourCC = []( const BYTE* pData,const char* pFourcc )
+	{
+		assert( strlen( pFourcc ) == 4 );
+		for( int i = 0; i < 4; i++ )
+		{
+			if( char( pData[i] ) != pFourcc[i] )
+			{
+				return false;
+			}
+		}
+		return true;
+	};
+
 	unsigned int fileSize = 0;
 	std::unique_ptr<BYTE[]> pFileIn;
 	try
@@ -354,17 +377,17 @@ Sound::Sound( const std::wstring & fileName,bool detectLooping,bool manualLoopin
 			file.open( fileName,std::ios::binary );
 
 			{
-				int fourcc;
-				file.read( reinterpret_cast<char*>(&fourcc),4 );
-				if( fourcc != 'FFIR' )
+				BYTE fourcc[4];
+				file.read( reinterpret_cast<char*>(fourcc),4u );
+				if( !IsFourCC( fourcc,"RIFF" ) )
 				{
 					throw CHILI_SOUND_FILE_EXCEPTION( fileName,L"Bad fourcc code" );
 				}
 			}
 
-			file.read( reinterpret_cast<char*>(&fileSize),4 );
-			fileSize += 8; // entry doesn't include the fourcc or itself
-			if( fileSize <= 44 )
+			file.read( reinterpret_cast<char*>(&fileSize),sizeof( fileSize ) );
+			fileSize += 8u; // entry doesn't include the fourcc or itself
+			if( fileSize <= 44u )
 			{
 				throw CHILI_SOUND_FILE_EXCEPTION( fileName,L"file too small" );
 			}
@@ -374,7 +397,7 @@ Sound::Sound( const std::wstring & fileName,bool detectLooping,bool manualLoopin
 			file.read( reinterpret_cast<char*>(pFileIn.get()),fileSize );
 		}
 
-		if( *reinterpret_cast<const unsigned int*>(&pFileIn[8]) != 'EVAW' )
+		if( !IsFourCC( &pFileIn[8],"WAVE" ) )
 		{
 			throw CHILI_SOUND_FILE_EXCEPTION( fileName,L"format not WAVE" );
 		}
@@ -382,16 +405,18 @@ Sound::Sound( const std::wstring & fileName,bool detectLooping,bool manualLoopin
 		//look for 'fmt ' chunk id
 		WAVEFORMATEX format;
 		bool bFilledFormat = false;
-		for( unsigned int i = 12; i < fileSize; )
+		for( size_t i = 12u; i < fileSize; )
 		{
-			if( *reinterpret_cast<const unsigned int*>(&pFileIn[i]) == ' tmf' )
+			if( IsFourCC( &pFileIn[i],"fmt " ) )
 			{
-				memcpy( &format,&pFileIn[i + 8],sizeof( format ) );
+				memcpy( &format,&pFileIn[i + 8u],sizeof( format ) );
 				bFilledFormat = true;
 				break;
 			}
 			// chunk size + size entry size + chunk id entry size + word padding
-			i += (*reinterpret_cast<const unsigned int*>(&pFileIn[i + 4]) + 9) & 0xFFFFFFFE;
+			unsigned int chunkSize;
+			memcpy( &chunkSize,&pFileIn[i + 4u],sizeof( chunkSize ) );
+			i += (chunkSize + 9u) & 0xFFFFFFFEu;
 		}
 		if( !bFilledFormat )
 		{
@@ -430,89 +455,122 @@ Sound::Sound( const std::wstring & fileName,bool detectLooping,bool manualLoopin
 
 		//look for 'data' chunk id
 		bool bFilledData = false;
-		for( unsigned int i = 12; i < fileSize; )
+		for( size_t i = 12u; i < fileSize; )
 		{
-			const int chunkSize = *reinterpret_cast<const unsigned int*>(&pFileIn[i + 4]);
-			if( *reinterpret_cast<const unsigned int*>(&pFileIn[i]) == 'atad' )
+			unsigned int chunkSize;
+			memcpy( &chunkSize,&pFileIn[i + 4u],sizeof( chunkSize ) );
+			if( IsFourCC( &pFileIn[i],"data" ) )
 			{
 				pData = std::make_unique<BYTE[]>( chunkSize );
 				nBytes = chunkSize;
-				memcpy( pData.get(),&pFileIn[i + 8],nBytes );
+				memcpy( pData.get(),&pFileIn[i + 8u],nBytes );
 
 				bFilledData = true;
 				break;
 			}
 			// chunk size + size entry size + chunk id entry size + word padding
-			i += (chunkSize + 9) & 0xFFFFFFFE;
+			i += (chunkSize + 9u) & 0xFFFFFFFEu;
 		}
 		if( !bFilledData )
 		{
 			throw CHILI_SOUND_FILE_EXCEPTION( fileName,L"data chunk not found" );
 		}
 
-		if( detectLooping )
+		switch( loopType )
 		{
-			//look for 'cue' chunk id
-			bool bFilledCue = false;
-			for( unsigned int i = 12; i < fileSize; )
+		case LoopType::AutoEmbeddedCuePoints:
 			{
-				const int chunkSize = *reinterpret_cast<const unsigned int*>(&pFileIn[i + 4]);
-				if( *reinterpret_cast<const unsigned int*>(&pFileIn[i]) == ' euc' )
+				looping = true;
+
+				//look for 'cue' chunk id
+				bool bFilledCue = false;
+				for( size_t i = 12u; i < fileSize; )
 				{
-					struct CuePoint
+					unsigned int chunkSize;
+					memcpy( &chunkSize,&pFileIn[i + 4u],sizeof( chunkSize ) );
+					if( IsFourCC( &pFileIn[i],"cue " ) )
 					{
-						unsigned int cuePtId;
-						unsigned int pop;
-						unsigned int dataChunkId;
-						unsigned int chunkStart;
-						unsigned int blockStart;
-						unsigned int frameOffset;
-					};
+						struct CuePoint
+						{
+							unsigned int cuePtId;
+							unsigned int pop;
+							unsigned int dataChunkId;
+							unsigned int chunkStart;
+							unsigned int blockStart;
+							unsigned int frameOffset;
+						};
 
-					const unsigned int nCuePts =
-						*reinterpret_cast<const unsigned int*>(&pFileIn[i + 8]);
-					if( nCuePts != 2 )
-					{
-						continue;
+						unsigned int nCuePts;
+						memcpy( &nCuePts,&pFileIn[i + 8u],sizeof( nCuePts ) );
+						if( nCuePts == 2u )
+						{
+							CuePoint cuePts[2];
+							memcpy( cuePts,&pFileIn[i + 12u],sizeof( cuePts ) );
+							loopStart = cuePts[0].frameOffset;
+							loopEnd = cuePts[1].frameOffset;
+							bFilledCue = true;
+							break;
+						}
 					}
-
-					const CuePoint* const pCuePts =
-						reinterpret_cast<const CuePoint* const>(&pFileIn[i + 12]);
-					loopStart = pCuePts[0].frameOffset;
-					loopEnd = pCuePts[1].frameOffset;
-					bFilledCue = true;
-					break;
+					// chunk size + size entry size + chunk id entry size + word padding
+					i += (chunkSize + 9u) & 0xFFFFFFFEu;
 				}
-				// chunk size + size entry size + chunk id entry size + word padding
-				i += (chunkSize + 9) & 0xFFFFFFFE;
+				if( !bFilledCue )
+				{
+					throw CHILI_SOUND_FILE_EXCEPTION( fileName,L"loop cue chunk not found" );
+				}
 			}
-			if( !bFilledCue )
+			break;
+		case LoopType::ManualFloat:
 			{
-				throw CHILI_SOUND_FILE_EXCEPTION( fileName,L"loop cue chunk not found" );
-			}
-		}
-		else if( manualLooping )
-		{
-			const WAVEFORMATEX& sysFormat = SoundSystem::GetFormat();
-			const unsigned int nFrames = nBytes / sysFormat.nBlockAlign;
-			if( loopStartSeconds != -1.0f )
-			{
+				looping = true;
+
+				const WAVEFORMATEX& sysFormat = SoundSystem::GetFormat();
+				const unsigned int nFrames = nBytes / sysFormat.nBlockAlign;
+
 				const unsigned int nFramesPerSec = sysFormat.nAvgBytesPerSec / sysFormat.nBlockAlign;
 				loopStart = unsigned int( loopStartSeconds * float( nFramesPerSec ) );
 				assert( loopStart < nFrames );
 				loopEnd = unsigned int( loopEndSeconds * float( nFramesPerSec ) );
 				assert( loopEnd > loopStart && loopEnd < nFrames );
+
+				// just in case ;)
+				loopStart = std::min( loopStart,nFrames - 1u );
+				loopEnd = std::min( loopEnd,nFrames - 1u );
 			}
-			else
+			break;
+		case LoopType::ManualSample:
 			{
+				looping = true;
+
+				const WAVEFORMATEX& sysFormat = SoundSystem::GetFormat();
+				const unsigned int nFrames = nBytes / sysFormat.nBlockAlign;
+
 				assert( loopStartSample < nFrames );
 				loopStart = loopStartSample;
 				assert( loopEndSample > loopStartSample && loopEndSample < nFrames );
 				loopEnd = loopEndSample;
+
+				// just in case ;)
+				loopStart = std::min( loopStart,nFrames - 1u );
+				loopEnd = std::min( loopEnd,nFrames - 1u );
 			}
-			// just in case ;)
-			loopStart = std::min( loopStart,nFrames - 1 );
-			loopEnd = std::min( loopEnd,nFrames - 1 );
+			break;
+		case LoopType::AutoFullSound:
+			{
+				looping = true;
+
+				const unsigned int nFrames = nBytes / SoundSystem::GetFormat().nBlockAlign;
+				assert( nFrames != 0u && "Cannot auto full-loop on zero-length sound!" );
+				loopStart = 0u;
+				loopEnd = nFrames != 0u ? nFrames - 1u : 0u;
+			}
+			break;
+		case LoopType::NotLooping:
+			break;
+		default:
+			assert( "Bad LoopType encountered!" && false );
+			break;
 		}
 	}
 	catch( const SoundSystem::FileException& e )
