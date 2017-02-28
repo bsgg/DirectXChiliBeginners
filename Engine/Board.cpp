@@ -46,7 +46,7 @@ int Board::GetContents(const Location & loc) const
 void Board::ConsumeContents(const Location& loc)
 {
 	// The only content to consume is food not any other content
-	//assert(GetContents(loc) == 2);
+	assert((GetContents(loc) == 2) || (GetContents(loc) == 3));
 	contents[width * loc.y + loc.x] = 0;
 }
 
