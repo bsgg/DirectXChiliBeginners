@@ -96,7 +96,7 @@ void Game2::UpdateFrame()
 					contents == 1) // Obstacle
 				{
 					gameIsOver = true;
-					sndFart.Play();
+					sndFart.Play(rng, 1.2f);
 					sndMusic.StopAll();
 				}
 				else if (contents == 2) // Food
@@ -118,7 +118,7 @@ void Game2::UpdateFrame()
 					board.ConsumeContents(next);
 					board.SpawnContents(rng, snake, 3);
 					snakeMovePeriod = std::max(snakeMovePeriod * snakeSpeedupFactor, snakeMovePeriodMin);					
-					sndFart.Play();
+					sndFart.Play(rng, 0.6f);
 				}
 				else
 				{

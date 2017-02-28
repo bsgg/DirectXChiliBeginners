@@ -35,7 +35,7 @@ private:
 	SoundEffect sfxSlither = SoundEffect({ L"Sounds\\Slither0.wav",L"Sounds\\Slither1.wav",L"Sounds\\Slither2.wav" });
 	Sound sndMusic = Sound(L"Sounds\\Music_Loop.wav", Sound::LoopType::AutoFullSound);
 	Sound sndTitle = Sound(L"Sounds\\Title.wav");
-	Sound sndFart = Sound(L"Sounds\\Fart.wav");
+	SoundEffect sndFart = SoundEffect({ L"Sounds\\Fart.wav" });
 	
 	// How many frames the snake takes to move (60 / 20 = 3 frames per second)
 	static constexpr float snakeMovePeriodMin = 0.040f;
@@ -44,7 +44,7 @@ private:
 	static constexpr int nFood = 12;
 	float snakeMovePeriod = 0.4f;
 	float snakeMoveCounter = 0.0f;
-	static constexpr float snakeSpeedupFactor = 0.9f;
+	static constexpr float snakeSpeedupFactor = 0.93f;
 	bool gameIsOver = false;
 	bool gameIsStarted = false;
 };
