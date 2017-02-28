@@ -102,28 +102,21 @@ void Game2::UpdateFrame(float dt)
 				}
 				else
 				{
-					const bool eating = next == goal.GetLocation();
-					if (eating)
+					if (next == goal.GetLocation())
 					{
 						snake.Grow();
-					}
-					snake.MoveBy(delta_loc);
-					if (eating)
-					{
+						snake.MoveBy(delta_loc);
 						goal.Respawn(rng, board, snake);
 						board.SpawnObstacle(rng, snake, goal);
 					}
+					else
+					{
+						snake.MoveBy(delta_loc);
+					}
+
 				}
 			}
-
 			snakeMovePeriod = std::max(snakeMovePeriod - dt * snakeMovePeriodSpeedup, snakeMovePeriodMin);
-			/*++snakeSpeedupPeriodCounter;
-			if (snakeSpeedupPeriodCounter >= snakeSpeedupPeriod)
-			{
-				snakeSpeedupPeriodCounter = 0;
-				--snakeMoveRate;
-				snakeMoveRate = std::max(snakeMoveRate - 1, snakeMovePeriodMin);				
-			}*/
 		}
 	}
 	else
