@@ -28,15 +28,10 @@ Game2::Game2(MainWindow& wnd)
 	gfx(wnd),
 	board(gfx),
 	rng(std::random_device()()),
-	snake({ 2,3 }),
-	goal(rng, board, snake)
+	snake({ 2,2 })
 {
-	/*snake.Grow();
-	snake.Grow();
-	snake.Grow();
-	snake.MoveBy(Location{ 1,0 });
-	snake.MoveBy(Location{ 1,0 });
-	snake.MoveBy(Location{ 1,0 });*/
+	// Spawn food
+	board.SpawnFood(rng, snake);
 }
 
 void Game2::Go()
@@ -93,27 +88,26 @@ void Game2::UpdateFrame(float dt)
 			{
 				snakeMoveCounter -= snakeModifiedMovePeriod;
 				const Location next = snake.GetNexHeadLocation(delta_loc);
-
+				const int contents = board.GetContents(next);
 				if (!board.IsInsideBoard(next) ||
 					snake.IsInTileExceptEnd(next) || 
-					board.CheckForObstacle(next))
+					contents == 1) // Obstacle
 				{
 					gameIsOver = true;
 				}
+				else if (contents == 2) // Food
+				{
+					// Make snake grow and consumn the food
+					snake.Grow();
+					snake.MoveBy(delta_loc);
+					board.ConsumeContents(next);
+					board.SpawnFood(rng, snake);
+					board.SpawnObstacle(rng, snake);
+				}
 				else
 				{
-					if (next == goal.GetLocation())
-					{
-						snake.Grow();
-						snake.MoveBy(delta_loc);
-						goal.Respawn(rng, board, snake);
-						board.SpawnObstacle(rng, snake, goal);
-					}
-					else
-					{
-						snake.MoveBy(delta_loc);
-					}
-
+					// Empty place, move snake
+					snake.MoveBy(delta_loc);
 				}
 			}
 			snakeMovePeriod = std::max(snakeMovePeriod - dt * snakeMovePeriodSpeedup, snakeMovePeriodMin);
@@ -148,7 +142,7 @@ void Game2::DrawFrame()
 	if (gameIsStarted)
 	{
 		snake.Draw(board);
-		goal.Draw(board);
+		board.DrawCells();
 
 		if (gameIsOver)
 		{
@@ -156,7 +150,6 @@ void Game2::DrawFrame()
 		}
 
 		board.DrawBorder();
-		board.DrawObstacles();
 	}
 	else
 	{

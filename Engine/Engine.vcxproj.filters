@@ -87,9 +87,6 @@
     <ClInclude Include="SpriteCodex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GoalSnake.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="FrameTimer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -138,9 +135,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SpriteCodex.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GoalSnake.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="FrameTimer.cpp">

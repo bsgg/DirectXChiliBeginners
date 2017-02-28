@@ -5,7 +5,6 @@
 #include "Graphics.h"
 #include "Board.h"
 #include "Snake.h"
-#include "GoalSnake.h"
 #include "FrameTimer.h"
 #include <random>
 
@@ -27,7 +26,6 @@ private:
 	std::mt19937 rng;
 	Board board;
 	Snake snake;
-	GoalSnake goal;
 	// Snake starts moving to the right
 	Location delta_loc = { 1,0 };
 	

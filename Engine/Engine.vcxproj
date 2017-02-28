@@ -147,7 +147,6 @@
     <ClInclude Include="Game1.h" />
     <ClInclude Include="Game2.h" />
     <ClInclude Include="Goal.h" />
-    <ClInclude Include="GoalSnake.h" />
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="Keyboard.h" />
     <ClInclude Include="Location.h" />
@@ -169,7 +168,6 @@
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Game1.cpp" />
     <ClCompile Include="Game2.cpp" />
-    <ClCompile Include="GoalSnake.cpp" />
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="Keyboard.cpp" />
     <ClCompile Include="Main.cpp" />

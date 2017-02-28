@@ -1,6 +1,5 @@
 #include "Board.h"
 #include "Snake.h"
-#include "GoalSnake.h"
 #include <assert.h>
 
 Board::Board(Graphics & gfx)
@@ -39,12 +38,19 @@ bool Board::IsInsideBoard(const Location & loc) const
 			(loc.y < height);
 }
 
-bool Board::CheckForObstacle(const Location & loc) const
+int Board::GetContents(const Location & loc) const
 {
-	return hasObstacle[width * loc.y + loc.x];
+	return contents[width * loc.y + loc.x];
 }
 
-void Board::SpawnObstacle(std::mt19937 & rng, const Snake & snake, const GoalSnake& goal)
+void Board::ConsumeContents(const Location& loc)
+{
+	// The only content to consume is food not any other content
+	assert(GetContents(loc) == 2);
+	contents[width * loc.y + loc.x] = 0;
+}
+
+void Board::SpawnObstacle(std::mt19937 & rng, const Snake & snake)
 {
 	// Random location
 	std::uniform_int_distribution<int> xDist(0, GetGridWidth() - 1);
@@ -57,10 +63,29 @@ void Board::SpawnObstacle(std::mt19937 & rng, const Snake & snake, const GoalSna
 		newLoc.y = yDist(rng);
 
 		// Check another location if snake is this location or the board has already another obstacle or a goal
-	} while (snake.IsInTile(newLoc) || CheckForObstacle(newLoc) || (goal.GetLocation() == newLoc));
+	} while (snake.IsInTile(newLoc) || (GetContents(newLoc) != 0));
 	
 	// Include new obstacle
-	hasObstacle[newLoc.y * width + newLoc.x] = true;
+	contents[newLoc.y * width + newLoc.x] = 1;
+}
+
+void Board::SpawnFood(std::mt19937& rng, const class Snake& snake)
+{
+	// Random location
+	std::uniform_int_distribution<int> xDist(0, GetGridWidth() - 1);
+	std::uniform_int_distribution<int> yDist(0, GetGridHeight() - 1);
+
+	Location newLoc;
+	do
+	{
+		newLoc.x = xDist(rng);
+		newLoc.y = yDist(rng);
+
+		// Check another location if snake is this location or the board has already another obstacle or a goal
+	} while (snake.IsInTile(newLoc) || (GetContents(newLoc) != 0));
+
+	// Include new obstacle
+	contents[newLoc.y * width + newLoc.x] = 2;
 }
 
 void Board::DrawBorder()
@@ -81,15 +106,19 @@ void Board::DrawBorder()
 
 }
 
-void Board::DrawObstacles()
+void Board::DrawCells()
 {	
 	for (int y = 0; y < height; y++)
 	{
 		for (int x = 0; x < width; x++)
 		{
-			if (CheckForObstacle({x,y}))
+			const int contents = GetContents({ x,y });
+			if (contents == 1)
 			{
 				DrawCell({ x, y }, obstacleColor);
+			}else if (contents == 2)
+			{
+				DrawCell({ x, y }, foodColor);
 			}
 		}
 	}

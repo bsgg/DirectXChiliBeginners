@@ -13,16 +13,19 @@ public:
 	int GetGridWidth() const;
 	int GetGridHeight() const;
 	bool IsInsideBoard(const Location& loc) const;
-	bool CheckForObstacle(const Location& loc) const;
+	int GetContents(const Location& loc) const;
+	void ConsumeContents(const Location& loc);
 	// Use of forward declaration to avoid any circular dependencies with snake and board
 	// Snake.h already include Board, so that´s why we can´t include Snake in this header file
-	void SpawnObstacle(std::mt19937& rng, const class Snake& snake, const class GoalSnake& goal);
+	void SpawnObstacle(std::mt19937& rng, const class Snake& snake);
+	void SpawnFood(std::mt19937& rng, const class Snake& snake);
 	void DrawBorder();
-	void DrawObstacles();
+	void DrawCells();
 
 private:
 	static constexpr Color borderColor = Colors::Blue;
 	static constexpr Color obstacleColor = Colors::Gray;
+	static constexpr Color foodColor = Colors::Red;
 
 	static constexpr int dimension = 20;
 	static constexpr int cellPadding = 1;
@@ -36,6 +39,7 @@ private:
 	static constexpr int y = 20;
 
 	// Initialize all the elements with {}
-	bool hasObstacle[width * height] = { false };
+	// 0: empty 1: obstacle  2:food  3:sppedup elemtn
+	int contents[width * height] = { 0 };
 	Graphics& gfx;
 };
