@@ -17,8 +17,7 @@ public:
 	void ConsumeContents(const Location& loc);
 	// Use of forward declaration to avoid any circular dependencies with snake and board
 	// Snake.h already include Board, so that´s why we can´t include Snake in this header file
-	void SpawnObstacle(std::mt19937& rng, const class Snake& snake);
-	void SpawnFood(std::mt19937& rng, const class Snake& snake);
+	void SpawnContents(std::mt19937& rng, const class Snake& snake, int contentsType);
 	void DrawBorder();
 	void DrawCells();
 

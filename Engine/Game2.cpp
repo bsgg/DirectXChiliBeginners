@@ -31,7 +31,7 @@ Game2::Game2(MainWindow& wnd)
 	snake({ 2,2 })
 {
 	// Spawn food
-	board.SpawnFood(rng, snake);
+	board.SpawnContents(rng, snake, 2);
 }
 
 void Game2::Go()
@@ -97,12 +97,14 @@ void Game2::UpdateFrame(float dt)
 				}
 				else if (contents == 2) // Food
 				{
-					// Make snake grow and consumn the food
+					// Make snake grow and consume the food
 					snake.Grow();
 					snake.MoveBy(delta_loc);
 					board.ConsumeContents(next);
-					board.SpawnFood(rng, snake);
-					board.SpawnObstacle(rng, snake);
+
+					// Spawn food and obstalce
+					board.SpawnContents(rng, snake, 1);
+					board.SpawnContents(rng, snake, 2);
 				}
 				else
 				{

@@ -50,7 +50,7 @@ void Board::ConsumeContents(const Location& loc)
 	contents[width * loc.y + loc.x] = 0;
 }
 
-void Board::SpawnObstacle(std::mt19937 & rng, const Snake & snake)
+void Board::SpawnContents(std::mt19937 & rng, const Snake & snake, int contentsType)
 {
 	// Random location
 	std::uniform_int_distribution<int> xDist(0, GetGridWidth() - 1);
@@ -66,26 +66,7 @@ void Board::SpawnObstacle(std::mt19937 & rng, const Snake & snake)
 	} while (snake.IsInTile(newLoc) || (GetContents(newLoc) != 0));
 	
 	// Include new obstacle
-	contents[newLoc.y * width + newLoc.x] = 1;
-}
-
-void Board::SpawnFood(std::mt19937& rng, const class Snake& snake)
-{
-	// Random location
-	std::uniform_int_distribution<int> xDist(0, GetGridWidth() - 1);
-	std::uniform_int_distribution<int> yDist(0, GetGridHeight() - 1);
-
-	Location newLoc;
-	do
-	{
-		newLoc.x = xDist(rng);
-		newLoc.y = yDist(rng);
-
-		// Check another location if snake is this location or the board has already another obstacle or a goal
-	} while (snake.IsInTile(newLoc) || (GetContents(newLoc) != 0));
-
-	// Include new obstacle
-	contents[newLoc.y * width + newLoc.x] = 2;
+	contents[newLoc.y * width + newLoc.x] = contentsType;
 }
 
 void Board::DrawBorder()
