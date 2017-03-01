@@ -63,7 +63,7 @@ void Board::SpawnContents(std::mt19937 & rng, const Snake & snake, ECellContents
 		newLoc.y = yDist(rng);
 
 		// Check another location if snake is this location or the board has already another obstacle or a goal
-	} while (snake.IsInTile(newLoc) || (GetContents(newLoc) != ECellContents::Obstacle));
+	} while (snake.IsInTile(newLoc) || (GetContents(newLoc) != ECellContents::Empty));
 	
 	// Include new obstacle
 	contents[newLoc.y * width + newLoc.x] = contentsType;
@@ -93,7 +93,7 @@ void Board::DrawCells()
 	{
 		for (int x = 0; x < width; x++)
 		{
-			const Board::ECellContents contents = GetContents({ x,y });
+			const ECellContents contents = GetContents({ x,y });
 			if (contents == ECellContents::Obstacle)
 			{
 				DrawCell({ x, y }, obstacleColor);

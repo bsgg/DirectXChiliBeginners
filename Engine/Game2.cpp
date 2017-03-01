@@ -107,16 +107,16 @@ void Game2::UpdateFrame()
 					board.ConsumeContents(next);
 
 					// Spawn food and obstalce
-					board.SpawnContents(rng, snake, Board::ECellContents::Food);
 					board.SpawnContents(rng, snake, Board::ECellContents::Obstacle);
+					board.SpawnContents(rng, snake, Board::ECellContents::Food);
 
 					sfxEat.Play(rng, 0.8f);
 				}
-				else if (contents == Board::ECellContents::Food) // Food
+				else if (contents == Board::ECellContents::Poison) // Food
 				{
 					snake.MoveBy(delta_loc);
 					board.ConsumeContents(next);
-					board.SpawnContents(rng, snake, Board::ECellContents::Poison);
+					//board.SpawnContents(rng, snake, Board::ECellContents::Poison);
 					snakeMovePeriod = std::max(snakeMovePeriod * snakeSpeedupFactor, snakeMovePeriodMin);					
 					sndFart.Play(rng, 0.6f);
 				}
