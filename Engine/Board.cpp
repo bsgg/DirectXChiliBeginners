@@ -38,7 +38,7 @@ bool Board::IsInsideBoard(const Location & loc) const
 			(loc.y < height);
 }
 
-int Board::GetContents(const Location & loc) const
+Board::ECellContents Board::GetContents(const Location & loc) const
 {
 	return contents[width * loc.y + loc.x];
 }
@@ -46,11 +46,11 @@ int Board::GetContents(const Location & loc) const
 void Board::ConsumeContents(const Location& loc)
 {
 	// The only content to consume is food not any other content
-	assert((GetContents(loc) == 2) || (GetContents(loc) == 3));
-	contents[width * loc.y + loc.x] = 0;
+	assert((GetContents(loc) == ECellContents::Food) || (GetContents(loc) == ECellContents::Poison));
+	contents[width * loc.y + loc.x] = ECellContents::Empty;
 }
 
-void Board::SpawnContents(std::mt19937 & rng, const Snake & snake, int contentsType)
+void Board::SpawnContents(std::mt19937 & rng, const Snake & snake, ECellContents contentsType)
 {
 	// Random location
 	std::uniform_int_distribution<int> xDist(0, GetGridWidth() - 1);
@@ -63,7 +63,7 @@ void Board::SpawnContents(std::mt19937 & rng, const Snake & snake, int contentsT
 		newLoc.y = yDist(rng);
 
 		// Check another location if snake is this location or the board has already another obstacle or a goal
-	} while (snake.IsInTile(newLoc) || (GetContents(newLoc) != 0));
+	} while (snake.IsInTile(newLoc) || (GetContents(newLoc) != ECellContents::Obstacle));
 	
 	// Include new obstacle
 	contents[newLoc.y * width + newLoc.x] = contentsType;
@@ -93,16 +93,17 @@ void Board::DrawCells()
 	{
 		for (int x = 0; x < width; x++)
 		{
-			const int contents = GetContents({ x,y });
-			if (contents == 1)
+			const Board::ECellContents contents = GetContents({ x,y });
+			if (contents == ECellContents::Obstacle)
 			{
 				DrawCell({ x, y }, obstacleColor);
 
-			}else if (contents == 2)
+			}
+			else if (contents == ECellContents::Food)
 			{
 				DrawCell({ x, y }, foodColor);
 			}
-			else if (contents == 3)
+			else if (contents == ECellContents::Poison)
 			{
 				DrawCell({ x, y }, poisonColor);
 			}

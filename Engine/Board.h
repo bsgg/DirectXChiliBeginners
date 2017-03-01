@@ -6,6 +6,14 @@
 
 class Board
 {
+public:
+	enum class ECellContents
+	{
+		Empty,
+		Obstacle,
+		Food,
+		Poison
+	};
 
 public:
 	Board(Graphics& gfx);
@@ -13,11 +21,11 @@ public:
 	int GetGridWidth() const;
 	int GetGridHeight() const;
 	bool IsInsideBoard(const Location& loc) const;
-	int GetContents(const Location& loc) const;
+	ECellContents GetContents(const Location& loc) const;
 	void ConsumeContents(const Location& loc);
 	// Use of forward declaration to avoid any circular dependencies with snake and board
 	// Snake.h already include Board, so that´s why we can´t include Snake in this header file
-	void SpawnContents(std::mt19937& rng, const class Snake& snake, int contentsType);
+	void SpawnContents(std::mt19937& rng, const class Snake& snake, ECellContents contentsType);
 	void DrawBorder();
 	void DrawCells();
 
@@ -39,7 +47,6 @@ private:
 	static constexpr int y = 20;
 
 	// Initialize all the elements with {}
-	// 0:empty space,  1:obstacle, 2:food,  3:poison-speedup
-	int contents[width * height] = { 0 };
+	ECellContents contents[width * height] = { ECellContents::Empty };
 	Graphics& gfx;
 };

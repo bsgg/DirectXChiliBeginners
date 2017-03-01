@@ -33,12 +33,12 @@ Game2::Game2(MainWindow& wnd)
 	// Spawn food and poison
 	for (int i = 0; i < nPoison; i++)
 	{
-		board.SpawnContents(rng, snake, 3);
+		board.SpawnContents(rng, snake, Board::ECellContents::Poison);
 	}
 
 	for (int i = 0; i < nFood; i++)
 	{
-		board.SpawnContents(rng, snake, 2);
+		board.SpawnContents(rng, snake, Board::ECellContents::Food);
 	}
 	sndTitle.Play(1.0f, 1.0f);
 }
@@ -90,16 +90,16 @@ void Game2::UpdateFrame()
 			{
 				snakeMoveCounter -= snakeModifiedMovePeriod;
 				const Location next = snake.GetNexHeadLocation(delta_loc);
-				const int contents = board.GetContents(next);
+				const Board::ECellContents contents = board.GetContents(next);
 				if (!board.IsInsideBoard(next) ||
 					snake.IsInTileExceptEnd(next) || 
-					contents == 1) // Obstacle
+					contents == Board::ECellContents::Obstacle) // Obstacle
 				{
 					gameIsOver = true;
 					sndFart.Play(rng, 1.2f);
 					sndMusic.StopAll();
 				}
-				else if (contents == 2) // Food
+				else if (contents == Board::ECellContents::Food) // Food
 				{
 					// Make snake grow and consume the food
 					snake.Grow();
@@ -107,16 +107,16 @@ void Game2::UpdateFrame()
 					board.ConsumeContents(next);
 
 					// Spawn food and obstalce
-					board.SpawnContents(rng, snake, 1);
-					board.SpawnContents(rng, snake, 2);
+					board.SpawnContents(rng, snake, Board::ECellContents::Food);
+					board.SpawnContents(rng, snake, Board::ECellContents::Obstacle);
 
 					sfxEat.Play(rng, 0.8f);
 				}
-				else if (contents == 3) // Food
+				else if (contents == Board::ECellContents::Food) // Food
 				{
 					snake.MoveBy(delta_loc);
 					board.ConsumeContents(next);
-					board.SpawnContents(rng, snake, 3);
+					board.SpawnContents(rng, snake, Board::ECellContents::Poison);
 					snakeMovePeriod = std::max(snakeMovePeriod * snakeSpeedupFactor, snakeMovePeriodMin);					
 					sndFart.Play(rng, 0.6f);
 				}
